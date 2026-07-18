@@ -1,0 +1,1308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Signal Desk — Unified Messaging Demo</title>
+
+<!--
+  DEMO IDENTITY DOCUMENTATION
+  Product name (in-demo): Signal Desk
+  Category: Unified Messaging / Omnichannel Inbox with AI Handover
+
+  Palette (named tokens, see :root):
+    --bg:      #14121B  (ink plum background — dark chat-app register)
+    --surface: #1D1A26  (card/panel surface)
+    --surface-2:#262230 (raised surface / hover)
+    --primary: #FFC145  (signal amber — primary accent, CTAs, active states)
+    --accent:  #FF3D81  (pulse magenta — AI/handover/notification accent)
+    --text:    #F3EFEA  (warm off-white text)
+    --text-dim:#9C96AC  (muted text)
+    --border:  #322C3E  (hairline borders)
+  Deliberately distinct from The Loft (navy/teal/indigo) and the Findly demo (cream/forest green/coral, DM Serif+DM Sans).
+
+  Typography:
+    Display: 'Sora' (headings — geometric, technical, modern)
+    Body: 'Inter' (body copy, UI)
+    Data/mono: 'IBM Plex Mono' (timestamps, channel tags, status codes, message IDs)
+
+  Signature element: the "Channel Rail" — a vertical stack of four pulsing
+  channel dots (Messenger blue, WhatsApp green, Telegram cyan, Instagram
+  gradient) that animate in sequence to represent messages landing from
+  different platforms into one inbox. Appears in the navigator hero and
+  as a live indicator in the admin inbox.
+
+  Do not reuse this palette/font pairing for another demo per Section 5.3
+  of the Demo Project Generation Standard.
+
+  NOTE ON PUBLIC VIEW FRAMING (v1.1 revision):
+  The public view represents what an END CUSTOMER of Company A/B/C/D sees
+  when messaging the business — it is NOT a marketing page selling
+  "Signal Desk" as a SaaS product. Copy and CTAs were revised to remove
+  self-referential "Get a Demo / Request Access" language, since this
+  view IS already part of the demo being shown to the lead.
+-->
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+<style>
+:root{
+  --bg:#14121B;
+  --surface:#1D1A26;
+  --surface-2:#262230;
+  --primary:#FFC145;
+  --primary-dim:#8a6b28;
+  --accent:#FF3D81;
+  --text:#F3EFEA;
+  --text-dim:#9C96AC;
+  --border:#322C3E;
+  --success:#38D39F;
+  --fb:#4C8DFF;
+  --wa:#3ED598;
+  --tg:#37BCE8;
+  --ig1:#FF5F6D; --ig2:#B14EFF;
+  --radius:14px;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  font-family:'Inter',system-ui,sans-serif;
+  background:var(--bg);
+  color:var(--text);
+  min-height:100vh;
+  overflow-x:hidden;
+}
+h1,h2,h3,h4,.font-display{font-family:'Sora',sans-serif}
+.mono{font-family:'IBM Plex Mono',monospace}
+a{color:inherit;text-decoration:none}
+button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
+ul{list-style:none}
+img,svg{display:block}
+::-webkit-scrollbar{width:8px;height:8px}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:8px}
+:focus-visible{outline:2px solid var(--primary);outline-offset:2px}
+
+@media (prefers-reduced-motion: reduce){
+  *{animation-duration:0.01ms !important;animation-iteration-count:1 !important;transition-duration:0.01ms !important;}
+}
+
+/* ============ NAVIGATOR ============ */
+#navigator{
+  position:fixed;inset:0;z-index:9999;
+  background:radial-gradient(1200px 600px at 15% -10%, rgba(255,193,69,0.10), transparent 60%),
+             radial-gradient(1000px 500px at 100% 10%, rgba(255,61,129,0.10), transparent 55%),
+             var(--bg);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:5vh 5vw;
+  transition:opacity .4s ease, visibility .4s ease;
+}
+#navigator.hidden{opacity:0;visibility:hidden;pointer-events:none}
+.nav-eyebrow{
+  display:flex;align-items:center;gap:10px;
+  font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:.12em;
+  color:var(--text-dim);text-transform:uppercase;margin-bottom:18px;
+}
+.channel-rail{display:flex;gap:6px}
+.channel-rail .dot{width:8px;height:8px;border-radius:50%;opacity:.35;animation:pulse-dot 2.4s ease-in-out infinite}
+.channel-rail .dot:nth-child(1){background:var(--fb);animation-delay:0s}
+.channel-rail .dot:nth-child(2){background:var(--wa);animation-delay:.3s}
+.channel-rail .dot:nth-child(3){background:var(--tg);animation-delay:.6s}
+.channel-rail .dot:nth-child(4){background:linear-gradient(135deg,var(--ig1),var(--ig2));animation-delay:.9s}
+@keyframes pulse-dot{0%,100%{opacity:.3;transform:scale(1)}50%{opacity:1;transform:scale(1.35)}}
+
+.nav-title{font-size:clamp(2rem,5vw,3.4rem);font-weight:800;text-align:center;max-width:760px;line-height:1.08;letter-spacing:-.02em}
+.nav-title span{color:var(--primary)}
+.nav-sub{color:var(--text-dim);text-align:center;max-width:560px;margin:16px auto 44px;font-size:1.02rem;line-height:1.6}
+
+.nav-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px;max-width:920px;width:100%}
+.nav-card{
+  background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+  padding:26px 22px;text-align:left;transition:transform .2s ease, border-color .2s ease, background .2s ease;
+  display:flex;flex-direction:column;gap:10px;
+}
+.nav-card:hover{transform:translateY(-4px);border-color:var(--primary);background:var(--surface-2)}
+.nav-card .icon-wrap{
+  width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;
+  background:rgba(255,193,69,.12);color:var(--primary);
+}
+.nav-card h3{font-size:1.08rem;font-weight:700}
+.nav-card p{color:var(--text-dim);font-size:.88rem;line-height:1.5}
+.nav-card .go{margin-top:auto;font-size:.8rem;color:var(--primary);font-weight:600;display:flex;align-items:center;gap:6px}
+
+.nav-footnote{margin-top:34px;color:var(--text-dim);font-size:.8rem;display:flex;align-items:center;gap:8px}
+.nav-footnote svg{width:14px;height:14px;stroke:var(--text-dim)}
+
+/* ============ VIEW SWITCHER ============ */
+#switcher{
+  position:fixed;bottom:20px;left:50%;transform:translateX(-50%);z-index:900;
+  display:flex;align-items:center;gap:4px;background:rgba(29,26,38,.92);backdrop-filter:blur(10px);
+  border:1px solid var(--border);border-radius:999px;padding:5px;box-shadow:0 12px 30px rgba(0,0,0,.4);
+  opacity:0;visibility:hidden;transition:opacity .3s ease, visibility .3s ease;
+}
+#switcher.visible{opacity:1;visibility:visible}
+#switcher button{
+  padding:9px 16px;border-radius:999px;font-size:.82rem;font-weight:600;color:var(--text-dim);
+  display:flex;align-items:center;gap:6px;white-space:nowrap;
+}
+#switcher button.active{background:var(--primary);color:#1A1408}
+#switcher button.menu-btn{color:var(--text-dim);border-right:1px solid var(--border);border-radius:0;padding-right:14px;margin-right:4px}
+
+/* ============ TOAST ============ */
+#toast-wrap{position:fixed;bottom:78px;left:50%;transform:translateX(-50%);z-index:9998;display:flex;flex-direction:column;gap:8px;align-items:center}
+.toast{
+  background:var(--surface-2);border:1px solid var(--border);color:var(--text);
+  padding:11px 20px;border-radius:10px;font-size:.86rem;font-weight:500;
+  display:flex;align-items:center;gap:8px;box-shadow:0 10px 24px rgba(0,0,0,.4);
+  animation:toast-in .25s ease;
+}
+.toast .dot{width:8px;height:8px;border-radius:50%;background:var(--success)}
+@keyframes toast-in{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+
+/* ============ VIEWS ============ */
+.view{display:none}
+.view.active{display:block}
+
+/* ---- PUBLIC VIEW ---- */
+#public-view header.pnav{
+  position:fixed;top:0;left:0;right:0;z-index:500;padding:18px 6%;
+  display:flex;align-items:center;justify-content:space-between;
+  background:rgba(20,18,27,.85);backdrop-filter:blur(10px);border-bottom:1px solid var(--border);
+}
+.brand{display:flex;align-items:center;gap:10px;font-weight:800;font-size:1.1rem;font-family:'Sora',sans-serif}
+.brand .mark{width:30px;height:30px;border-radius:9px;background:linear-gradient(135deg,var(--primary),var(--accent));display:flex;align-items:center;justify-content:center;font-size:16px}
+.pnav .links{display:flex;gap:28px;font-size:.9rem;color:var(--text-dim)}
+.pnav .links a:hover{color:var(--text)}
+.pnav .view-badge{background:rgba(255,193,69,.1);border:1px solid rgba(255,193,69,.3);color:var(--primary);padding:8px 14px;border-radius:9px;font-weight:600;font-size:.78rem;display:flex;align-items:center;gap:6px}
+.pnav .view-badge .dot{width:6px;height:6px;border-radius:50%;background:var(--primary)}
+.pnav-toggle{display:none;width:38px;height:38px;border-radius:9px;background:var(--surface-2);border:1px solid var(--border);align-items:center;justify-content:center;color:var(--text)}
+.pnav-mobile-links{display:none;flex-direction:column;gap:2px;position:fixed;top:64px;left:0;right:0;background:var(--surface);border-bottom:1px solid var(--border);padding:10px 6%;z-index:499}
+.pnav-mobile-links.open{display:flex}
+.pnav-mobile-links a{padding:12px 4px;font-size:.92rem;color:var(--text-dim);border-bottom:1px solid var(--border)}
+.pnav-mobile-links a:last-child{border-bottom:none}
+
+.hero{
+  padding:170px 6% 90px;display:grid;grid-template-columns:1.05fr .95fr;gap:60px;align-items:center;max-width:1280px;margin:0 auto;
+}
+.hero-tag{display:inline-flex;align-items:center;gap:8px;background:rgba(255,193,69,.1);border:1px solid rgba(255,193,69,.25);color:var(--primary);padding:6px 14px;border-radius:999px;font-size:.78rem;font-weight:600;margin-bottom:22px}
+.hero h1{font-size:clamp(2.2rem,4.2vw,3.4rem);font-weight:800;line-height:1.08;letter-spacing:-.02em}
+.hero h1 .hl{color:var(--primary)}
+.hero p{color:var(--text-dim);font-size:1.05rem;line-height:1.7;margin:22px 0 30px;max-width:520px}
+.hero-actions{display:flex;gap:14px;flex-wrap:wrap}
+.btn-primary{background:var(--primary);color:#1A1408;padding:14px 24px;border-radius:10px;font-weight:700;font-size:.92rem}
+.btn-ghost{border:1px solid var(--border);padding:14px 24px;border-radius:10px;font-weight:600;font-size:.92rem;color:var(--text)}
+.btn-ghost:hover{border-color:var(--primary)}
+
+.hero-stats{display:flex;gap:28px;margin-top:44px;flex-wrap:wrap}
+.hero-stats div b{display:block;font-family:'Sora',sans-serif;font-size:1.5rem;color:var(--primary)}
+.hero-stats div span{font-size:.78rem;color:var(--text-dim)}
+
+/* mock phone/chat widget in hero */
+.phone-mock{
+  background:var(--surface);border:1px solid var(--border);border-radius:26px;padding:16px;
+  box-shadow:0 30px 60px rgba(0,0,0,.5);max-width:360px;margin:0 auto;
+}
+.phone-head{display:flex;align-items:center;gap:10px;padding:8px 8px 14px;border-bottom:1px solid var(--border)}
+.phone-head .av{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,var(--primary),var(--accent))}
+.phone-head b{font-size:.86rem}
+.phone-head span{display:block;font-size:.72rem;color:var(--success)}
+.chat-body{padding:14px 4px;display:flex;flex-direction:column;gap:10px;min-height:280px}
+.bubble{max-width:82%;padding:10px 13px;border-radius:14px;font-size:.85rem;line-height:1.45}
+.bubble.in{background:var(--surface-2);align-self:flex-start;border-bottom-left-radius:4px}
+.bubble.out{background:var(--primary);color:#1A1408;align-self:flex-end;border-bottom-right-radius:4px;font-weight:500}
+.bubble.sys{align-self:center;background:transparent;color:var(--text-dim);font-family:'IBM Plex Mono',monospace;font-size:.68rem;text-align:center;padding:4px 0}
+.typing{display:flex;gap:4px;align-self:flex-start;padding:10px 13px;background:var(--surface-2);border-radius:14px;border-bottom-left-radius:4px}
+.typing span{width:6px;height:6px;border-radius:50%;background:var(--text-dim);animation:tbounce 1.2s infinite}
+.typing span:nth-child(2){animation-delay:.15s}
+.typing span:nth-child(3){animation-delay:.3s}
+@keyframes tbounce{0%,60%,100%{transform:translateY(0);opacity:.4}30%{transform:translateY(-4px);opacity:1}}
+.chat-input{display:flex;gap:8px;border-top:1px solid var(--border);padding-top:12px}
+.chat-input input{flex:1;background:var(--surface-2);border:1px solid var(--border);border-radius:10px;padding:10px 12px;color:var(--text);font-size:.82rem}
+.chat-input button{background:var(--primary);color:#1A1408;width:38px;height:38px;border-radius:10px;font-weight:700}
+.quick-replies{display:flex;gap:8px;flex-wrap:wrap;margin-top:2px}
+.qr-btn{border:1px solid var(--border);padding:7px 12px;border-radius:999px;font-size:.74rem;color:var(--text-dim)}
+.qr-btn:hover{border-color:var(--primary);color:var(--primary)}
+
+.channels-strip{padding:50px 6%;max-width:1280px;margin:0 auto;text-align:center}
+.channels-strip .label{font-size:.78rem;letter-spacing:.1em;text-transform:uppercase;color:var(--text-dim);margin-bottom:22px;font-family:'IBM Plex Mono',monospace}
+.ch-icons{display:flex;justify-content:center;gap:38px;flex-wrap:wrap;align-items:center}
+.ch-icons .ch{display:flex;flex-direction:column;align-items:center;gap:8px;color:var(--text-dim);font-size:.78rem}
+.ch-badge{width:46px;height:46px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:20px}
+
+.section{padding:90px 6%;max-width:1280px;margin:0 auto}
+.section-head{text-align:center;max-width:600px;margin:0 auto 50px}
+.section-head .eyebrow{color:var(--primary);font-size:.78rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;font-family:'IBM Plex Mono',monospace}
+.section-head h2{font-size:clamp(1.7rem,3vw,2.3rem);margin-top:12px;font-weight:800;letter-spacing:-.01em}
+.section-head p{color:var(--text-dim);margin-top:14px;line-height:1.6}
+
+.feat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:20px}
+.feat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:26px}
+.feat-card .ico{width:38px;height:38px;border-radius:10px;background:rgba(255,193,69,.12);color:var(--primary);display:flex;align-items:center;justify-content:center;margin-bottom:16px}
+.feat-card h3{font-size:1.02rem;margin-bottom:8px}
+.feat-card p{color:var(--text-dim);font-size:.86rem;line-height:1.6}
+
+.handover-demo{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:36px;display:grid;grid-template-columns:1fr 1fr;gap:36px;align-items:center}
+.handover-demo .timeline{display:flex;flex-direction:column;gap:0}
+.tl-item{display:flex;gap:14px;padding-bottom:22px;position:relative}
+.tl-item:not(:last-child)::before{content:'';position:absolute;left:11px;top:26px;bottom:0;width:1px;background:var(--border)}
+.tl-dot{width:24px;height:24px;border-radius:50%;background:var(--surface-2);border:2px solid var(--border);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:11px;z-index:1}
+.tl-dot.active{border-color:var(--primary);background:var(--primary);color:#1A1408}
+.tl-dot.accent{border-color:var(--accent);background:var(--accent);color:#fff}
+.tl-item h4{font-size:.9rem;margin-bottom:3px}
+.tl-item p{font-size:.78rem;color:var(--text-dim)}
+
+.testimonials{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:20px}
+.t-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px}
+.t-card p{font-size:.9rem;line-height:1.65;color:var(--text)}
+.t-card .who{display:flex;align-items:center;gap:10px;margin-top:18px}
+.t-card .who .av{width:34px;height:34px;border-radius:50%;background:var(--surface-2);border:1px solid var(--border)}
+.t-card .who b{font-size:.82rem;display:block}
+.t-card .who span{font-size:.74rem;color:var(--text-dim)}
+
+.lead-form-section{background:var(--surface);border:1px solid var(--border);border-radius:22px;padding:50px;display:grid;grid-template-columns:1fr 1fr;gap:50px}
+.lead-form-section h2{font-size:1.7rem;font-weight:800;margin-bottom:12px}
+.lead-form-section p{color:var(--text-dim);line-height:1.7;margin-bottom:20px}
+.mini-stats{display:flex;gap:22px;margin-top:24px}
+.mini-stats div b{display:block;font-family:'Sora',sans-serif;color:var(--primary);font-size:1.3rem}
+.mini-stats div span{font-size:.72rem;color:var(--text-dim)}
+.form-grid{display:flex;flex-direction:column;gap:14px}
+.form-grid input, .form-grid select{
+  background:var(--surface-2);border:1px solid var(--border);border-radius:10px;padding:13px 14px;color:var(--text);font-size:.88rem;width:100%;
+}
+.form-grid label{font-size:.76rem;color:var(--text-dim);margin-bottom:5px;display:block}
+.form-grid .submit-btn{background:var(--primary);color:#1A1408;padding:14px;border-radius:10px;font-weight:700;margin-top:6px}
+
+.pfooter{border-top:1px solid var(--border);padding:50px 6% 100px;max-width:1280px;margin:0 auto;display:flex;justify-content:space-between;flex-wrap:wrap;gap:30px}
+.pfooter .fcol h4{font-size:.8rem;color:var(--text-dim);margin-bottom:12px;text-transform:uppercase;letter-spacing:.06em}
+.pfooter .fcol a{display:block;font-size:.86rem;color:var(--text-dim);margin-bottom:8px}
+.pfooter .fcol a:hover{color:var(--primary)}
+
+/* exit intent modal */
+.modal-overlay{position:fixed;inset:0;background:rgba(10,9,14,.7);backdrop-filter:blur(4px);z-index:5000;display:flex;align-items:center;justify-content:center;opacity:0;visibility:hidden;transition:opacity .25s,visibility .25s}
+.modal-overlay.show{opacity:1;visibility:visible}
+.modal-box{background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:36px;max-width:420px;width:90%;position:relative;transform:translateY(10px);transition:transform .25s}
+.modal-overlay.show .modal-box{transform:translateY(0)}
+.modal-close{position:absolute;top:16px;right:16px;color:var(--text-dim);width:30px;height:30px;display:flex;align-items:center;justify-content:center;border-radius:8px}
+.modal-close:hover{background:var(--surface-2)}
+.modal-box h3{font-size:1.3rem;margin-bottom:10px}
+.modal-box p{color:var(--text-dim);font-size:.86rem;line-height:1.6;margin-bottom:20px}
+.modal-success{display:none;text-align:center;padding:20px 0}
+.modal-success.show{display:block}
+.modal-success .chk{width:50px;height:50px;border-radius:50%;background:rgba(56,211,159,.15);color:var(--success);display:flex;align-items:center;justify-content:center;margin:0 auto 14px;font-size:24px}
+
+/* ---- ADMIN VIEW ---- */
+#admin-view{display:none;}
+#admin-view.active{display:flex;min-height:100vh}
+.sidebar{
+  width:230px;flex-shrink:0;background:var(--surface);border-right:1px solid var(--border);
+  padding:22px 14px;position:fixed;top:0;bottom:0;left:0;overflow-y:auto;
+}
+.sb-brand{display:flex;align-items:center;gap:10px;padding:6px 8px 20px;font-weight:800;font-family:'Sora',sans-serif}
+.sb-brand .mark{width:28px;height:28px;border-radius:8px;background:linear-gradient(135deg,var(--primary),var(--accent));display:flex;align-items:center;justify-content:center;font-size:14px}
+.sb-group-label{font-size:.68rem;text-transform:uppercase;letter-spacing:.08em;color:var(--text-dim);padding:14px 10px 6px;font-family:'IBM Plex Mono',monospace}
+.sb-link{display:flex;align-items:center;gap:10px;padding:10px 10px;border-radius:9px;font-size:.86rem;color:var(--text-dim);margin-bottom:2px;position:relative}
+.sb-link:hover{background:var(--surface-2);color:var(--text)}
+.sb-link.active{background:rgba(255,193,69,.12);color:var(--primary);font-weight:600}
+.sb-link .badge{margin-left:auto;background:var(--accent);color:#fff;font-size:.65rem;padding:1px 6px;border-radius:999px;font-weight:700}
+.sb-link svg{width:16px;height:16px;stroke:currentColor;flex-shrink:0}
+
+.admin-main{margin-left:230px;flex:1;min-width:0}
+.sidebar-toggle{display:none;width:34px;height:34px;border-radius:9px;background:var(--surface-2);border:1px solid var(--border);align-items:center;justify-content:center;color:var(--text)}
+.sidebar-overlay{display:none;position:fixed;inset:0;background:rgba(10,9,14,.6);z-index:399}
+.sidebar-overlay.show{display:block}
+.topbar{
+  height:64px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;
+  padding:0 26px;position:sticky;top:0;background:rgba(20,18,27,.9);backdrop-filter:blur(10px);z-index:100;
+}
+.topbar h2{font-size:1.05rem;font-weight:700}
+.topbar .tools{display:flex;align-items:center;gap:14px}
+.tb-search{background:var(--surface-2);border:1px solid var(--border);border-radius:9px;padding:8px 12px;font-size:.82rem;color:var(--text-dim);width:200px}
+.tb-icon{width:34px;height:34px;border-radius:9px;background:var(--surface-2);display:flex;align-items:center;justify-content:center;position:relative;color:var(--text-dim)}
+.tb-icon .dot{position:absolute;top:6px;right:6px;width:7px;height:7px;border-radius:50%;background:var(--accent)}
+.company-switch{display:flex;align-items:center;gap:8px;background:var(--surface-2);border:1px solid var(--border);padding:6px 10px 6px 6px;border-radius:9px;font-size:.8rem}
+.company-switch .cav{width:22px;height:22px;border-radius:6px;background:var(--primary)}
+
+.page{padding:26px;display:none}
+.page.active{display:block}
+
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:22px}
+.kpi-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:20px}
+.kpi-card .top{display:flex;justify-content:space-between;align-items:flex-start}
+.kpi-card .ico{width:32px;height:32px;border-radius:9px;background:rgba(255,193,69,.12);color:var(--primary);display:flex;align-items:center;justify-content:center}
+.kpi-card b{display:block;font-family:'Sora',sans-serif;font-size:1.7rem;margin-top:14px}
+.kpi-card span{font-size:.78rem;color:var(--text-dim)}
+.kpi-card .delta{font-size:.72rem;color:var(--success);font-weight:600}
+
+.panel{background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden;margin-bottom:20px}
+.panel-head{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center}
+.panel-head h3{font-size:.94rem;font-weight:700}
+.filter-row{display:flex;gap:8px;padding:14px 20px;border-bottom:1px solid var(--border);flex-wrap:wrap}
+.filter-btn{padding:7px 13px;border-radius:999px;font-size:.78rem;color:var(--text-dim);border:1px solid var(--border)}
+.filter-btn.active{background:var(--primary);color:#1A1408;border-color:var(--primary)}
+
+table{width:100%;border-collapse:collapse}
+th{text-align:left;font-size:.7rem;text-transform:uppercase;letter-spacing:.05em;color:var(--text-dim);padding:12px 20px;border-bottom:1px solid var(--border);font-family:'IBM Plex Mono',monospace}
+td{padding:13px 20px;font-size:.84rem;border-bottom:1px solid var(--border)}
+tr:last-child td{border-bottom:none}
+.chan-pill{display:inline-flex;align-items:center;gap:6px;padding:4px 9px;border-radius:999px;font-size:.72rem;font-weight:600}
+.chan-pill::before{content:'';display:inline-block;width:12px;height:12px;background-size:contain;background-repeat:no-repeat;background-position:center;flex-shrink:0}
+.chan-pill.fb::before{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%234C8DFF' d='M12 2C6.5 2 2 6.1 2 11.2c0 2.9 1.5 5.5 3.8 7.2V22l3.5-1.9c.9.2 1.8.4 2.7.4 5.5 0 10-4.1 10-9.3S17.5 2 12 2z'/%3E%3Cpath fill='white' d='M6.8 14.4l3.4-3.6 2.6 2 3.6-3.6-3.7 5.8-2.7-2-3.2 3.4z'/%3E%3C/svg%3E")}
+.chan-pill.wa::before{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle cx='12' cy='12' r='11' fill='%233ED598'/%3E%3Cpath fill='white' d='M12 5.5c-3.6 0-6.5 2.9-6.5 6.5 0 1.2.3 2.3.9 3.3l-1 3.6 3.7-1c1 .5 2.1.8 3.3.8h0c3.6 0 6.5-2.9 6.5-6.5S15.6 5.5 12 5.5zm3.6 9c-.2.4-.9.8-1.3.9-.3.1-.8.1-1.2 0-.3-.1-.7-.2-1.1-.4-2-.8-3.3-2.8-3.4-3-.1-.1-.8-1.1-.8-2.1 0-1 .5-1.5.7-1.7.2-.2.4-.3.5-.3h.4c.1 0 .3 0 .4.4.2.4.6 1.3.6 1.4.1.1.1.2 0 .3-.1.1-.1.2-.2.3-.1.1-.2.2-.3.3-.1.1-.1.2-.1.3.1.2.6.9 1.2 1.5.8.7 1.5 1 1.7 1.1.2.1.3.1.4-.1.1-.1.5-.6.7-.8.1-.1.2-.2.4-.1.2.1 1.1.5 1.3.6.2.1.3.1.3.2.1.1.1.5-.1.9z'/%3E%3C/svg%3E")}
+.chan-pill.tg::before{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle cx='12' cy='12' r='11' fill='%2337BCE8'/%3E%3Cpath fill='white' d='M17.5 6.5l-2.3 11c-.2.8-.6 1-1.3.6l-3.6-2.7-1.7 1.7c-.2.2-.4.4-.7.4l.3-3.6 6.6-6c.3-.3-.1-.4-.4-.2l-8.1 5.1-3.5-1.1c-.8-.2-.8-.8.2-1.2l13.6-5.3c.6-.2 1.2.1 1 1.3z'/%3E%3C/svg%3E")}
+.chan-pill.ig::before{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cdefs%3E%3ClinearGradient id='ig' x1='0' y1='1' x2='1' y2='0'%3E%3Cstop offset='0%25' stop-color='%23FF5F6D'/%3E%3Cstop offset='100%25' stop-color='%23B14EFF'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect x='2' y='2' width='20' height='20' rx='6' fill='url(%23ig)'/%3E%3Ccircle cx='12' cy='12' r='4.3' fill='none' stroke='white' stroke-width='1.6'/%3E%3Ccircle cx='17.2' cy='6.8' r='1.1' fill='white'/%3E%3C/svg%3E")}
+.chan-pill.fb{background:rgba(76,141,255,.15);color:var(--fb)}
+.chan-pill.wa{background:rgba(62,213,152,.15);color:var(--wa)}
+.chan-pill.tg{background:rgba(55,188,232,.15);color:var(--tg)}
+.chan-pill.ig{background:rgba(255,95,109,.15);color:#ff8f9c}
+.status-pill{padding:4px 10px;border-radius:999px;font-size:.72rem;font-weight:600}
+.status-pill.open{background:rgba(56,211,159,.15);color:var(--success)}
+.status-pill.closed{background:rgba(156,150,172,.15);color:var(--text-dim)}
+.status-pill.ai{background:rgba(255,61,129,.15);color:var(--accent)}
+.status-pill.agent{background:rgba(255,193,69,.15);color:var(--primary)}
+.status-pill.new{background:rgba(255,193,69,.2);color:var(--primary)}
+.status-pill.qualified{background:rgba(56,211,159,.15);color:var(--success)}
+.status-pill.sending{background:rgba(255,193,69,.15);color:var(--primary)}
+.status-pill.completed{background:rgba(56,211,159,.15);color:var(--success)}
+.view-btn{color:var(--primary);font-size:.8rem;font-weight:600}
+.view-btn:hover{text-decoration:underline}
+
+/* Unified Inbox layout */
+.inbox-filter-bar{padding:12px 16px;border-bottom:1px solid var(--border);display:flex;flex-direction:column;gap:8px}
+.inbox-filter-group{display:flex;gap:6px;flex-wrap:wrap}
+.inbox-filter-group .filter-btn{font-size:.72rem;padding:6px 11px;display:inline-flex;align-items:center;gap:5px}
+.inbox-filter-group .filter-btn[data-value="fb"]::before,.inbox-filter-group .filter-btn[data-value="wa"]::before,.inbox-filter-group .filter-btn[data-value="tg"]::before,.inbox-filter-group .filter-btn[data-value="ig"]::before{content:'';display:inline-block;width:12px;height:12px;background-size:contain;background-repeat:no-repeat;background-position:center}
+.inbox-filter-group .filter-btn[data-value="fb"]::before{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%234C8DFF' d='M12 2C6.5 2 2 6.1 2 11.2c0 2.9 1.5 5.5 3.8 7.2V22l3.5-1.9c.9.2 1.8.4 2.7.4 5.5 0 10-4.1 10-9.3S17.5 2 12 2z'/%3E%3Cpath fill='white' d='M6.8 14.4l3.4-3.6 2.6 2 3.6-3.6-3.7 5.8-2.7-2-3.2 3.4z'/%3E%3C/svg%3E")}
+.inbox-filter-group .filter-btn[data-value="wa"]::before{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle cx='12' cy='12' r='11' fill='%233ED598'/%3E%3Cpath fill='white' d='M12 5.5c-3.6 0-6.5 2.9-6.5 6.5 0 1.2.3 2.3.9 3.3l-1 3.6 3.7-1c1 .5 2.1.8 3.3.8h0c3.6 0 6.5-2.9 6.5-6.5S15.6 5.5 12 5.5zm3.6 9c-.2.4-.9.8-1.3.9-.3.1-.8.1-1.2 0-.3-.1-.7-.2-1.1-.4-2-.8-3.3-2.8-3.4-3-.1-.1-.8-1.1-.8-2.1 0-1 .5-1.5.7-1.7.2-.2.4-.3.5-.3h.4c.1 0 .3 0 .4.4.2.4.6 1.3.6 1.4.1.1.1.2 0 .3-.1.1-.1.2-.2.3-.1.1-.2.2-.3.3-.1.1-.1.2-.1.3.1.2.6.9 1.2 1.5.8.7 1.5 1 1.7 1.1.2.1.3.1.4-.1.1-.1.5-.6.7-.8.1-.1.2-.2.4-.1.2.1 1.1.5 1.3.6.2.1.3.1.3.2.1.1.1.5-.1.9z'/%3E%3C/svg%3E")}
+.inbox-filter-group .filter-btn[data-value="tg"]::before{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle cx='12' cy='12' r='11' fill='%2337BCE8'/%3E%3Cpath fill='white' d='M17.5 6.5l-2.3 11c-.2.8-.6 1-1.3.6l-3.6-2.7-1.7 1.7c-.2.2-.4.4-.7.4l.3-3.6 6.6-6c.3-.3-.1-.4-.4-.2l-8.1 5.1-3.5-1.1c-.8-.2-.8-.8.2-1.2l13.6-5.3c.6-.2 1.2.1 1 1.3z'/%3E%3C/svg%3E")}
+.inbox-filter-group .filter-btn[data-value="ig"]::before{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cdefs%3E%3ClinearGradient id='igf' x1='0' y1='1' x2='1' y2='0'%3E%3Cstop offset='0%25' stop-color='%23FF5F6D'/%3E%3Cstop offset='100%25' stop-color='%23B14EFF'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect x='2' y='2' width='20' height='20' rx='6' fill='url(%23igf)'/%3E%3Ccircle cx='12' cy='12' r='4.3' fill='none' stroke='white' stroke-width='1.6'/%3E%3Ccircle cx='17.2' cy='6.8' r='1.1' fill='white'/%3E%3C/svg%3E")}
+.inbox-wrap{display:grid;grid-template-columns:300px 1fr 280px;gap:0;background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden;height:calc(100vh - 150px)}
+.conv-list{border-right:1px solid var(--border);overflow-y:auto;display:flex;flex-direction:column}
+.conv-list-scroll{overflow-y:auto;flex:1}
+.conv-list-head{padding:14px 16px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center}
+.conv-item{padding:13px 16px;border-bottom:1px solid var(--border);display:flex;gap:10px;cursor:pointer;position:relative}
+.conv-item:hover{background:var(--surface-2)}
+.conv-item.active{background:rgba(255,193,69,.08);border-left:2px solid var(--primary)}
+.conv-item .cav{width:36px;height:36px;border-radius:50%;background:var(--surface-2);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:var(--text-dim)}
+.conv-item .meta{flex:1;min-width:0}
+.conv-item .meta .row1{display:flex;justify-content:space-between;gap:6px}
+.conv-item .meta b{font-size:.85rem}
+.conv-item .meta .time{font-size:.68rem;color:var(--text-dim);font-family:'IBM Plex Mono',monospace}
+.conv-item .meta p{font-size:.76rem;color:var(--text-dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
+.conv-item .chip-row{display:flex;gap:5px;margin-top:6px}
+.unread-dot{width:8px;height:8px;border-radius:50%;background:var(--accent);position:absolute;right:14px;top:16px}
+.conv-empty{padding:30px 20px;text-align:center;color:var(--text-dim);font-size:.82rem}
+
+.thread-panel{display:flex;flex-direction:column}
+.thread-head{padding:14px 20px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;gap:10px}
+.thread-back-btn{display:none;width:32px;height:32px;border-radius:8px;background:var(--surface-2);align-items:center;justify-content:center;color:var(--text);flex-shrink:0}
+.lead-info-btn{display:none;width:32px;height:32px;border-radius:8px;background:var(--surface-2);align-items:center;justify-content:center;color:var(--text-dim);flex-shrink:0}
+.thread-head .who{display:flex;align-items:center;gap:10px}
+.thread-head .cav{width:34px;height:34px;border-radius:50%;background:var(--surface-2)}
+.thread-head h4{font-size:.9rem}
+.thread-head .sub{font-size:.72rem;color:var(--text-dim)}
+.thread-body{flex:1;overflow-y:auto;padding:20px;display:flex;flex-direction:column;gap:12px}
+.thread-body .bubble{max-width:65%}
+.handover-divider{align-self:center;display:flex;align-items:center;gap:8px;color:var(--accent);font-size:.7rem;font-family:'IBM Plex Mono',monospace;margin:6px 0}
+.handover-divider::before,.handover-divider::after{content:'';width:40px;height:1px;background:var(--border)}
+.thread-compose{border-top:1px solid var(--border);padding:14px 20px}
+.compose-alias{font-size:.72rem;color:var(--text-dim);margin-bottom:8px}
+.compose-alias b{color:var(--primary)}
+.compose-row{display:flex;gap:8px}
+.compose-row input{flex:1;background:var(--surface-2);border:1px solid var(--border);border-radius:10px;padding:11px 14px;color:var(--text);font-size:.84rem}
+.compose-row button{background:var(--primary);color:#1A1408;padding:0 18px;border-radius:10px;font-weight:700;font-size:.82rem}
+.takeover-bar{background:rgba(255,61,129,.1);border:1px solid rgba(255,61,129,.3);color:var(--accent);padding:10px 14px;border-radius:10px;font-size:.78rem;display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+.takeover-bar button{background:var(--accent);color:#fff;padding:6px 14px;border-radius:8px;font-weight:700;font-size:.74rem}
+
+.lead-panel{padding:18px;overflow-y:auto}
+.lead-panel-handle{display:none}
+.lead-panel h4{font-size:.78rem;text-transform:uppercase;letter-spacing:.05em;color:var(--text-dim);margin-bottom:14px;font-family:'IBM Plex Mono',monospace}
+.lead-field{margin-bottom:14px}
+.lead-field label{font-size:.68rem;color:var(--text-dim);display:block;margin-bottom:3px}
+.lead-field div{font-size:.84rem}
+.lead-tag{display:inline-block;background:rgba(56,211,159,.15);color:var(--success);padding:4px 10px;border-radius:999px;font-size:.72rem;font-weight:600;margin-bottom:16px}
+
+/* Broadcast */
+.progress-bar{height:8px;background:var(--surface-2);border-radius:999px;overflow:hidden;margin-top:8px}
+.progress-fill{height:100%;background:var(--primary);border-radius:999px;transition:width .6s ease}
+.tier-note{background:var(--surface-2);border:1px solid var(--border);border-radius:10px;padding:12px 16px;font-size:.78rem;color:var(--text-dim);margin-top:14px}
+
+/* Settings */
+.settings-form{max-width:520px;display:flex;flex-direction:column;gap:16px}
+.settings-form label{font-size:.78rem;color:var(--text-dim);margin-bottom:6px;display:block}
+.settings-form input,.settings-form select,.settings-form textarea{width:100%;background:var(--surface-2);border:1px solid var(--border);border-radius:9px;padding:11px 13px;color:var(--text);font-size:.86rem}
+.toggle-row{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid var(--border)}
+.toggle-row:last-child{border-bottom:none}
+.toggle-row div b{display:block;font-size:.86rem}
+.toggle-row div span{font-size:.74rem;color:var(--text-dim)}
+.switch{width:40px;height:22px;background:var(--surface-2);border:1px solid var(--border);border-radius:999px;position:relative;flex-shrink:0}
+.switch.on{background:var(--primary);border-color:var(--primary)}
+.switch::after{content:'';position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:var(--text);transition:transform .2s}
+.switch.on::after{transform:translateX(18px);background:#1A1408}
+.save-btn{background:var(--primary);color:#1A1408;padding:12px 22px;border-radius:10px;font-weight:700;font-size:.86rem;align-self:flex-start}
+
+.avatar-init{display:flex;align-items:center;gap:10px}
+.avatar-init .cav{width:34px;height:34px;border-radius:50%;background:var(--surface-2);display:flex;align-items:center;justify-content:center;font-size:.76rem;font-weight:700;color:var(--text-dim)}
+
+/* Detail modal (leads/companies) */
+.detail-modal .modal-box{max-width:460px;text-align:left}
+.dm-row{display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--border);font-size:.84rem}
+.dm-row:last-child{border-bottom:none}
+.dm-row span:first-child{color:var(--text-dim)}
+
+@media (max-width:980px){
+  .hero{grid-template-columns:1fr}
+  .lead-form-section{grid-template-columns:1fr}
+  .handover-demo{grid-template-columns:1fr}
+}
+@media (max-width:760px){
+  .sidebar{transform:translateX(-100%);transition:transform .25s;z-index:400}
+  .sidebar.open{transform:translateX(0)}
+  .admin-main{margin-left:0}
+  .pnav .links{display:none}
+  .pnav-toggle{display:flex}
+  .sidebar-toggle{display:flex}
+  .topbar .tb-search{display:none}
+  .inbox-filter-group .filter-btn{font-size:.68rem;padding:5px 9px}
+  .inbox-filter-group .filter-btn::before{width:10px;height:10px}
+  .conv-item .meta p{max-width:150px}
+  .thread-compose{padding:10px 14px}
+  .compose-row input{font-size:.8rem}
+
+  /* Inbox: single-pane mobile navigation */
+  .inbox-wrap{grid-template-columns:1fr;height:calc(100vh - 200px);min-height:420px;position:relative;overflow:hidden}
+  .inbox-wrap .conv-list{height:100%;border-right:none}
+  .inbox-wrap .thread-panel{position:absolute;inset:0;background:var(--surface);display:none;z-index:2}
+  .inbox-wrap.mobile-thread-open .conv-list{display:none}
+  .inbox-wrap.mobile-thread-open .thread-panel{display:flex}
+  .thread-back-btn{display:flex}
+  .lead-info-btn{display:flex}
+
+  /* Lead panel becomes a slide-up sheet on mobile */
+  .lead-panel{position:fixed;left:0;right:0;bottom:0;max-height:70vh;border-radius:16px 16px 0 0;border-top:1px solid var(--border);background:var(--surface);transform:translateY(100%);transition:transform .25s ease;z-index:600;box-shadow:0 -12px 30px rgba(0,0,0,.4)}
+  .lead-panel.open{transform:translateY(0)}
+  .lead-panel-overlay{display:none;position:fixed;inset:0;background:rgba(10,9,14,.6);z-index:599}
+  .lead-panel-overlay.show{display:block}
+  .lead-panel-handle{display:block;width:36px;height:4px;border-radius:99px;background:var(--border);margin:0 auto 12px}
+}
+</style>
+</head>
+<body>
+
+<!-- ============ TOASTS ============ -->
+<div id="toast-wrap"></div>
+
+<!-- ============ NAVIGATOR ============ -->
+<div id="navigator">
+  <div class="nav-eyebrow">
+    <div class="channel-rail"><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
+    UNIFIED MESSAGING DEMO
+  </div>
+  <h1 class="nav-title">One inbox for <span>every conversation</span> your business has</h1>
+  <p class="nav-sub">Messenger, WhatsApp, Telegram, and Instagram DMs — merged into a single inbox with AI-assisted first response and automatic lead capture. Choose a view to explore.</p>
+  <div class="nav-cards">
+    <button class="nav-card" onclick="selectView('public')">
+      <div class="icon-wrap">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+      </div>
+      <h3>Customer's View</h3>
+      <p>What an end customer sees when messaging the business — the AI-assisted chat, and a live handover to a human agent.</p>
+      <span class="go">Explore view →</span>
+    </button>
+    <button class="nav-card" onclick="selectView('admin'); goPage('inbox')">
+      <div class="icon-wrap">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+      </div>
+      <h3>Unified Inbox</h3>
+      <p>Staff-side view: every channel merged into one thread list, AI/handover status, alias-based replies, and captured lead details.</p>
+      <span class="go">Explore view →</span>
+    </button>
+    <button class="nav-card" onclick="selectView('admin'); goPage('dashboard')">
+      <div class="icon-wrap">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M18 17V9M13 17V5M8 17v-3"/></svg>
+      </div>
+      <h3>Admin Dashboard</h3>
+      <p>Operational overview, companies &amp; channels, broadcast campaigns, AI &amp; handover settings, and team management.</p>
+      <span class="go">Explore view →</span>
+    </button>
+  </div>
+  <div class="nav-footnote">
+    <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M12 8v4M12 16h.01"/><circle cx="12" cy="12" r="10"/></svg>
+    You can switch between views anytime using the pill bar at the bottom of the screen.
+  </div>
+</div>
+
+<!-- ============ VIEW SWITCHER ============ -->
+<div id="switcher">
+  <button class="menu-btn" onclick="openNavigator()">↩ Menu</button>
+  <button id="sw-public" onclick="selectView('public')">Customer's View</button>
+  <button id="sw-admin" onclick="selectView('admin')">Admin Dashboard</button>
+</div>
+
+<!-- ============ PUBLIC VIEW ============ -->
+<div id="public-view" class="view">
+  <header class="pnav">
+    <div class="brand"><div class="mark">💬</div>Signal Desk</div>
+    <div class="links">
+      <a href="#features-sec">Features</a>
+      <a href="#channels-sec">Channels</a>
+      <a href="#handover-sec">AI &amp; Handover</a>
+    </div>
+    <span class="view-badge"><span class="dot"></span>Customer-Facing View</span>
+    <button class="pnav-toggle" onclick="togglePublicNav()" aria-label="Toggle navigation menu">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+    </button>
+  </header>
+  <div class="pnav-mobile-links" id="pnav-mobile-links">
+    <a href="#features-sec" onclick="togglePublicNav()">Features</a>
+    <a href="#channels-sec" onclick="togglePublicNav()">Channels</a>
+    <a href="#handover-sec" onclick="togglePublicNav()">AI &amp; Handover</a>
+  </div>
+
+  <section class="hero">
+    <div>
+      <div class="hero-tag">✨ AI first-response, human handover</div>
+      <h1>Every DM, every platform, <span class="hl">one inbox.</span></h1>
+      <p>This is what a customer sees when they message Company A, B, C, or D. Signal Desk merges Messenger, WhatsApp, Telegram, and Instagram conversations into a single unified inbox behind the scenes — with an AI assistant that answers first, captures the lead, and hands off to a person the moment a human touch is needed.</p>
+      <div class="hero-actions">
+        <a class="btn-primary" href="#handover-sec">See the Handover Flow</a>
+        <button class="btn-ghost" onclick="selectView('admin'); goPage('inbox')">Open the Staff Inbox →</button>
+      </div>
+      <div class="hero-stats">
+        <div><b>4</b><span>Channels unified</span></div>
+        <div><b>&lt;15s</b><span>AI first response</span></div>
+        <div><b>1</b><span>Inbox for the whole team</span></div>
+      </div>
+    </div>
+    <div class="phone-mock">
+      <div class="phone-head">
+        <div class="av"></div>
+        <div><b>Company A Support</b><span>● Online — AI Assistant active</span></div>
+      </div>
+      <div class="chat-body" id="hero-chat">
+        <div class="bubble in">Hi! Thanks for messaging Company A 👋 How can I help you today?</div>
+        <div class="bubble out">Do you deliver to Batangas?</div>
+        <div class="bubble in">Yes, we deliver to Batangas! Standard delivery is 2–3 business days. Want me to check a specific address for you?</div>
+        <div class="bubble sys">— Agent Sample Agent joined the conversation —</div>
+        <div class="bubble in">Hi, this is Sample Agent 🙂 I can confirm delivery timing for your exact barangay — could you share it?</div>
+      </div>
+      <div class="quick-replies">
+        <button class="qr-btn" onclick="sendQuickReply(this)">Track my order</button>
+        <button class="qr-btn" onclick="sendQuickReply(this)">Talk to a human</button>
+      </div>
+      <div class="chat-input">
+        <input type="text" id="hero-input" placeholder="Type a message..." onkeydown="if(event.key==='Enter')sendHeroMessage()">
+        <button onclick="sendHeroMessage()">➤</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="channels-strip" id="channels-sec">
+    <div class="label">Unifies conversations from</div>
+    <div class="ch-icons">
+      <div class="ch"><div class="ch-badge" style="background:rgba(76,141,255,.15)"><svg width="26" height="26" viewBox="0 0 24 24"><path fill="#4C8DFF" d="M12 2C6.5 2 2 6.1 2 11.2c0 2.9 1.5 5.5 3.8 7.2V22l3.5-1.9c.9.2 1.8.4 2.7.4 5.5 0 10-4.1 10-9.3S17.5 2 12 2z"/><path fill="white" d="M6.8 14.4l3.4-3.6 2.6 2 3.6-3.6-3.7 5.8-2.7-2-3.2 3.4z"/></svg></div>Messenger</div>
+      <div class="ch"><div class="ch-badge" style="background:rgba(62,213,152,.15)"><svg width="26" height="26" viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="#3ED598"/><path fill="white" d="M12 5.5c-3.6 0-6.5 2.9-6.5 6.5 0 1.2.3 2.3.9 3.3l-1 3.6 3.7-1c1 .5 2.1.8 3.3.8h0c3.6 0 6.5-2.9 6.5-6.5S15.6 5.5 12 5.5zm3.6 9c-.2.4-.9.8-1.3.9-.3.1-.8.1-1.2 0-.3-.1-.7-.2-1.1-.4-2-.8-3.3-2.8-3.4-3-.1-.1-.8-1.1-.8-2.1 0-1 .5-1.5.7-1.7.2-.2.4-.3.5-.3h.4c.1 0 .3 0 .4.4.2.4.6 1.3.6 1.4.1.1.1.2 0 .3-.1.1-.1.2-.2.3-.1.1-.2.2-.3.3-.1.1-.1.2-.1.3.1.2.6.9 1.2 1.5.8.7 1.5 1 1.7 1.1.2.1.3.1.4-.1.1-.1.5-.6.7-.8.1-.1.2-.2.4-.1.2.1 1.1.5 1.3.6.2.1.3.1.3.2.1.1.1.5-.1.9z"/></svg></div>WhatsApp</div>
+      <div class="ch"><div class="ch-badge" style="background:rgba(55,188,232,.15)"><svg width="26" height="26" viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="#37BCE8"/><path fill="white" d="M17.5 6.5l-2.3 11c-.2.8-.6 1-1.3.6l-3.6-2.7-1.7 1.7c-.2.2-.4.4-.7.4l.3-3.6 6.6-6c.3-.3-.1-.4-.4-.2l-8.1 5.1-3.5-1.1c-.8-.2-.8-.8.2-1.2l13.6-5.3c.6-.2 1.2.1 1 1.3z"/></svg></div>Telegram</div>
+      <div class="ch"><div class="ch-badge" style="background:linear-gradient(135deg,rgba(255,95,109,.2),rgba(177,78,255,.2))"><svg width="26" height="26" viewBox="0 0 24 24"><defs><linearGradient id="igStrip" x1="0" y1="1" x2="1" y2="0"><stop offset="0%" stop-color="#FF5F6D"/><stop offset="100%" stop-color="#B14EFF"/></linearGradient></defs><rect x="2" y="2" width="20" height="20" rx="6" fill="url(#igStrip)"/><circle cx="12" cy="12" r="4.3" fill="none" stroke="white" stroke-width="1.6"/><circle cx="17.2" cy="6.8" r="1.1" fill="white"/></svg></div>Instagram DMs</div>
+    </div>
+  </section>
+
+  <section class="section" id="features-sec">
+    <div class="section-head">
+      <span class="eyebrow">Platform</span>
+      <h2>Built for teams juggling multiple channels</h2>
+      <p>Everything a team needs to stop switching apps and start replying from one place.</p>
+    </div>
+    <div class="feat-grid">
+      <div class="feat-card">
+        <div class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg></div>
+        <h3>Unified Inbox</h3>
+        <p>One conversation list regardless of source platform — no more switching between Meta Business Suite and separate apps.</p>
+      </div>
+      <div class="feat-card">
+        <div class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3 7h7l-5.5 4.5L18 21l-6-4.5L6 21l1.5-7.5L2 9h7z"/></svg></div>
+        <h3>AI First Response</h3>
+        <p>An AI assistant greets and triages every new conversation, answering common questions before a human is needed.</p>
+      </div>
+      <div class="feat-card">
+        <div class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5z"/></svg></div>
+        <h3>Automatic Lead Capture</h3>
+        <p>Name, contact details, and inquiry type are extracted from the conversation and turned into a structured lead card.</p>
+      </div>
+      <div class="feat-card">
+        <div class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M6 21v-2a6 6 0 0 1 12 0v2"/></svg></div>
+        <h3>Multi-Company Access</h3>
+        <p>Owners and admins see every company; employees only see the ones they're assigned to — enforced at the server, not just hidden in the UI.</p>
+      </div>
+      <div class="feat-card">
+        <div class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4z"/></svg></div>
+        <h3>Broadcast Campaigns</h3>
+        <p>Send announcement templates to an existing contact list with automatic pacing that respects platform sending limits.</p>
+      </div>
+      <div class="feat-card">
+        <div class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg></div>
+        <h3>Delivery Tracking</h3>
+        <p>Every outbound message is tracked from sent through delivered and read, right down to individual broadcast recipients.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="handover-sec">
+    <div class="section-head">
+      <span class="eyebrow">AI &amp; Handover</span>
+      <h2>AI handles the first reply. A person takes it from there.</h2>
+      <p>The assistant answers, qualifies, and captures — then hands the conversation to a person the moment it's needed.</p>
+    </div>
+    <div class="handover-demo">
+      <div class="timeline">
+        <div class="tl-item"><div class="tl-dot active">1</div><div><h4>Customer messages in</h4><p>Arrives from any of the four connected channels into the unified inbox.</p></div></div>
+        <div class="tl-item"><div class="tl-dot active">2</div><div><h4>AI responds &amp; qualifies</h4><p>Answers common questions and extracts name, contact info, and inquiry type into a lead card.</p></div></div>
+        <div class="tl-item"><div class="tl-dot accent">3</div><div><h4>Handover triggered</h4><p>Customer asks for a person, or the AI flags a question it can't resolve.</p></div></div>
+        <div class="tl-item"><div class="tl-dot accent">✓</div><div><h4>Agent takes over</h4><p>A staff member claims the thread; replies now carry their alias and signature automatically.</p></div></div>
+      </div>
+      <div class="phone-mock" style="margin:0">
+        <div class="phone-head"><div class="av"></div><div><b>Live Conversation</b><span style="color:var(--accent)">● Handed over to Sample Agent</span></div></div>
+        <div class="chat-body">
+          <div class="bubble sys">2:38 PM — AI Assistant</div>
+          <div class="bubble in">Got it — I've noted your interest in bulk orders. Let me connect you with someone from our team.</div>
+          <div class="handover-divider">Handed over to Sample Agent — 2:41 PM</div>
+          <div class="bubble in">Hi! This is Sample Agent 🙂 I saw you're interested in bulk pricing — happy to help with that directly.</div>
+          <div class="bubble out">Great, thank you!</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="section-head">
+      <span class="eyebrow">Trusted by teams</span>
+      <h2>What operators say</h2>
+    </div>
+    <div class="testimonials">
+      <div class="t-card">
+        <p>"We stopped missing WhatsApp messages entirely once everything landed in one place. The AI handles the repetitive questions so my team only jumps in when it matters."</p>
+        <div class="who"><div class="av"></div><div><b>Sample Client</b><span>Operations Lead, Company B</span></div></div>
+      </div>
+      <div class="t-card">
+        <p>"Being able to switch between our four brands without logging into four different apps changed how fast we respond to customers."</p>
+        <div class="who"><div class="av"></div><div><b>Sample HR Lead</b><span>Founder, Company C</span></div></div>
+      </div>
+      <div class="t-card">
+        <p>"The handover moment is seamless — customers don't even notice they moved from bot to human until we tell them."</p>
+        <div class="who"><div class="av"></div><div><b>Sample User</b><span>Support Manager, Company D</span></div></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="contact-sec">
+    <div class="lead-form-section">
+      <div>
+        <h2>This form is part of the demo</h2>
+        <p>It shows the same lead-capture mechanism the AI assistant fills in automatically during a real conversation — try submitting it to see the confirmation behavior.</p>
+        <div class="mini-stats">
+          <div><b>4</b><span>Channels supported</span></div>
+          <div><b>&lt;15s</b><span>AI first response</span></div>
+          <div><b>100%</b><span>Server-side access control</span></div>
+        </div>
+      </div>
+      <form class="form-grid" onsubmit="return submitLeadForm(event)">
+        <div><label>Your Name</label><input type="text" placeholder="Your Name" required></div>
+        <div><label>Company</label><input type="text" placeholder="Your Company" required></div>
+        <div><label>Email</label><input type="email" placeholder="your@email.com" required></div>
+        <div><label>Channel you're messaging from</label>
+          <select><option>Messenger</option><option>WhatsApp</option><option>Telegram</option><option>Instagram DM</option></select>
+        </div>
+        <button class="submit-btn" type="submit">Submit Inquiry (Demo)</button>
+      </form>
+    </div>
+  </section>
+
+  <footer class="pfooter">
+    <div class="fcol"><div class="brand" style="margin-bottom:14px"><div class="mark">💬</div>Signal Desk</div><p style="color:var(--text-dim);font-size:.82rem;max-width:220px">A unified inbox for multi-channel, multi-brand customer messaging.</p></div>
+    <div class="fcol"><h4>Product</h4><a href="#features-sec">Features</a><a href="#channels-sec">Channels</a><a href="#handover-sec">AI &amp; Handover</a></div>
+    <div class="fcol"><h4>Views</h4><a href="#" onclick="selectView('admin'); goPage('inbox'); return false">Staff Inbox</a><a href="#" onclick="selectView('admin'); goPage('dashboard'); return false">Admin Dashboard</a></div>
+  </footer>
+</div>
+
+<!-- Exit intent modal -->
+<div class="modal-overlay" id="exit-modal">
+  <div class="modal-box">
+    <button class="modal-close" onclick="closeExitModal()">✕</button>
+    <div id="exit-form-wrap">
+      <h3>Before you go — see the staff side too</h3>
+      <p>Leave an email to simulate how a walkthrough follow-up would look after a real visitor lands here.</p>
+      <form onsubmit="return submitExitForm(event)">
+        <input type="email" placeholder="your@email.com" required style="width:100%;background:var(--surface-2);border:1px solid var(--border);border-radius:10px;padding:12px 14px;color:var(--text);font-size:.86rem;margin-bottom:14px">
+        <button class="submit-btn" style="width:100%" type="submit">Send Me the Walkthrough</button>
+      </form>
+    </div>
+    <div class="modal-success" id="exit-success">
+      <div class="chk">✓</div>
+      <h3 style="text-align:center">You're on the list</h3>
+      <p style="text-align:center">Check your inbox shortly for the walkthrough.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ============ ADMIN VIEW ============ -->
+<div id="admin-view" class="view">
+  <aside class="sidebar" id="sidebar">
+    <div class="sb-brand"><div class="mark">💬</div>Signal Desk</div>
+
+    <div class="company-switch" style="margin:0 6px 16px">
+      <div class="cav"></div>
+      <span id="company-switch-label" style="flex:1">All Companies</span>
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+    </div>
+
+    <div class="sb-group-label">Main</div>
+    <a class="sb-link" data-page="dashboard" onclick="goPage('dashboard')"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>Dashboard</a>
+    <a class="sb-link" data-page="inbox" onclick="goPage('inbox')"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>Unified Inbox<span class="badge">6</span></a>
+    <a class="sb-link" data-page="leads" onclick="goPage('leads')"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5z"/></svg>Leads</a>
+    <a class="sb-link" data-page="broadcasts" onclick="goPage('broadcasts')"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4z"/></svg>Broadcasts</a>
+
+    <div class="sb-group-label">Tools</div>
+    <a class="sb-link" data-page="companies" onclick="goPage('companies')"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 9h1m-1 4h1m4-4h1m-1 4h1"/></svg>Companies &amp; Channels</a>
+    <a class="sb-link" data-page="ai" onclick="goPage('ai')"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M12 2l3 7h7l-5.5 4.5L18 21l-6-4.5L6 21l1.5-7.5L2 9h7z"/></svg>AI &amp; Handover</a>
+    <a class="sb-link" data-page="users" onclick="goPage('users')"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M6 21v-2a6 6 0 0 1 12 0v2"/></svg>Users</a>
+
+    <div class="sb-group-label">Settings</div>
+    <a class="sb-link" data-page="settings" onclick="goPage('settings')"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>Settings</a>
+  </aside>
+
+  <div class="sidebar-overlay" id="sidebar-overlay" onclick="toggleSidebar()"></div>
+  <main class="admin-main">
+    <div class="topbar">
+      <button class="sidebar-toggle" onclick="toggleSidebar()" aria-label="Toggle sidebar">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+      </button>
+      <h2 id="page-title">Dashboard</h2>
+      <div class="tools">
+        <input class="tb-search" type="text" placeholder="Search conversations, leads...">
+        <div class="tb-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg><div class="dot"></div></div>
+      </div>
+    </div>
+
+    <!-- DASHBOARD -->
+    <div class="page active" id="page-dashboard">
+      <div class="kpi-grid">
+        <div class="kpi-card"><div class="top"><div class="ico"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div><span class="delta">↑ 12%</span></div><b>128</b><span>Open conversations</span></div>
+        <div class="kpi-card"><div class="top"><div class="ico"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3 7h7l-5.5 4.5L18 21l-6-4.5L6 21l1.5-7.5L2 9h7z"/></svg></div><span class="delta">↑ 34%</span></div><b>76%</b><span>Resolved by AI</span></div>
+        <div class="kpi-card"><div class="top"><div class="ico"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5z"/></svg></div><span class="delta">↑ 8%</span></div><b>342</b><span>Leads captured (30d)</span></div>
+        <div class="kpi-card"><div class="top"><div class="ico"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M6 21v-2a6 6 0 0 1 12 0v2"/></svg></div><span class="delta">↓ 4s</span></div><b>11s</b><span>Avg. first response</span></div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head"><h3>Messages by Channel (7 days)</h3></div>
+        <div style="padding:24px 20px">
+          <div style="display:flex;align-items:flex-end;gap:18px;height:150px">
+            <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:8px"><div style="width:100%;background:var(--fb);border-radius:6px 6px 0 0;height:70%"></div><span style="font-size:.72rem;color:var(--text-dim)">Messenger</span></div>
+            <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:8px"><div style="width:100%;background:var(--wa);border-radius:6px 6px 0 0;height:95%"></div><span style="font-size:.72rem;color:var(--text-dim)">WhatsApp</span></div>
+            <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:8px"><div style="width:100%;background:var(--tg);border-radius:6px 6px 0 0;height:40%"></div><span style="font-size:.72rem;color:var(--text-dim)">Telegram</span></div>
+            <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:8px"><div style="width:100%;background:linear-gradient(180deg,#ff5f6d,#b14eff);border-radius:6px 6px 0 0;height:55%"></div><span style="font-size:.72rem;color:var(--text-dim)">Instagram</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head"><h3>Recent Activity</h3></div>
+        <table>
+          <tbody>
+            <tr><td class="mono" style="color:var(--text-dim);width:90px">2:41 PM</td><td>Conversation with <b>Sample Customer</b> handed over to <b>Sample Agent</b></td><td><span class="chan-pill wa">WhatsApp</span></td></tr>
+            <tr><td class="mono" style="color:var(--text-dim)">2:22 PM</td><td>New lead captured — bulk order inquiry, Company B</td><td><span class="chan-pill fb">Messenger</span></td></tr>
+            <tr><td class="mono" style="color:var(--text-dim)">1:58 PM</td><td>Broadcast "Number migration notice" reached 250/500 recipients</td><td><span class="chan-pill wa">WhatsApp</span></td></tr>
+            <tr><td class="mono" style="color:var(--text-dim)">1:40 PM</td><td>AI resolved delivery-tracking question without handover</td><td><span class="chan-pill ig">Instagram</span></td></tr>
+            <tr><td class="mono" style="color:var(--text-dim)">1:12 PM</td><td>New conversation started — pricing inquiry</td><td><span class="chan-pill tg">Telegram</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- UNIFIED INBOX -->
+    <div class="page" id="page-inbox">
+      <div class="inbox-wrap" id="inbox-wrap">
+        <div class="conv-list">
+          <div class="conv-list-head"><b style="font-size:.86rem">Conversations</b><span class="mono" id="inbox-count" style="font-size:.7rem;color:var(--text-dim)">6 open</span></div>
+          <div class="inbox-filter-bar">
+            <div class="inbox-filter-group" id="company-filter-group">
+              <button class="filter-btn active" data-group="company" data-value="all" onclick="filterInbox(this)">All Companies</button>
+              <button class="filter-btn" data-group="company" data-value="Company A" onclick="filterInbox(this)">Company A</button>
+              <button class="filter-btn" data-group="company" data-value="Company B" onclick="filterInbox(this)">Company B</button>
+              <button class="filter-btn" data-group="company" data-value="Company C" onclick="filterInbox(this)">Company C</button>
+              <button class="filter-btn" data-group="company" data-value="Company D" onclick="filterInbox(this)">Company D</button>
+            </div>
+            <div class="inbox-filter-group" id="channel-filter-group">
+              <button class="filter-btn active" data-group="channel" data-value="all" onclick="filterInbox(this)">All Channels</button>
+              <button class="filter-btn" data-group="channel" data-value="fb" onclick="filterInbox(this)">Messenger</button>
+              <button class="filter-btn" data-group="channel" data-value="wa" onclick="filterInbox(this)">WhatsApp</button>
+              <button class="filter-btn" data-group="channel" data-value="tg" onclick="filterInbox(this)">Telegram</button>
+              <button class="filter-btn" data-group="channel" data-value="ig" onclick="filterInbox(this)">Instagram</button>
+            </div>
+          </div>
+          <div class="conv-list-scroll" id="conv-list-scroll">
+            <div class="conv-item active" data-conv-id="1" data-company="Company B" data-channel="wa" onclick="selectConversation(this,1)">
+              <div class="cav">SC</div>
+              <div class="meta"><div class="row1"><b>Sample Customer</b><span class="time">2:41 PM</span></div><p>Great, thank you!</p><div class="chip-row"><span class="chan-pill wa">WhatsApp</span><span class="status-pill agent">Agent</span></div></div>
+            </div>
+            <div class="conv-item" data-conv-id="2" data-company="Company A" data-channel="fb" onclick="selectConversation(this,2)">
+              <div class="cav">JD</div>
+              <div class="meta"><div class="row1"><b>Sample Lead</b><span class="time">2:22 PM</span></div><p>Do you offer bulk pricing for 50+ units?</p><div class="chip-row"><span class="chan-pill fb">Messenger</span><span class="status-pill ai">AI</span></div></div>
+              <div class="unread-dot"></div>
+            </div>
+            <div class="conv-item" data-conv-id="3" data-company="Company C" data-channel="wa" onclick="selectConversation(this,3)">
+              <div class="cav">RM</div>
+              <div class="meta"><div class="row1"><b>Sample Contact</b><span class="time">1:58 PM</span></div><p>Is the new number official?</p><div class="chip-row"><span class="chan-pill wa">WhatsApp</span><span class="status-pill ai">AI</span></div></div>
+              <div class="unread-dot"></div>
+            </div>
+            <div class="conv-item" data-conv-id="4" data-company="Company A" data-channel="ig" onclick="selectConversation(this,4)">
+              <div class="cav">KL</div>
+              <div class="meta"><div class="row1"><b>Sample Customer</b><span class="time">1:40 PM</span></div><p>Perfect, thanks for checking!</p><div class="chip-row"><span class="chan-pill ig">Instagram</span><span class="status-pill closed">Closed</span></div></div>
+            </div>
+            <div class="conv-item" data-conv-id="5" data-company="Company D" data-channel="tg" onclick="selectConversation(this,5)">
+              <div class="cav">TN</div>
+              <div class="meta"><div class="row1"><b>Sample User</b><span class="time">1:12 PM</span></div><p>What are your rates for a monthly plan?</p><div class="chip-row"><span class="chan-pill tg">Telegram</span><span class="status-pill ai">AI</span></div></div>
+            </div>
+            <div class="conv-item" data-conv-id="6" data-company="Company A" data-channel="fb" onclick="selectConversation(this,6)">
+              <div class="cav">AV</div>
+              <div class="meta"><div class="row1"><b>Sample Client</b><span class="time">12:50 PM</span></div><p>Can I reschedule my pickup?</p><div class="chip-row"><span class="chan-pill fb">Messenger</span><span class="status-pill agent">Agent</span></div></div>
+            </div>
+            <div class="conv-empty" id="conv-empty" style="display:none">No conversations match the selected filters.</div>
+          </div>
+        </div>
+
+        <div class="thread-panel">
+          <div class="thread-head">
+            <button class="thread-back-btn" onclick="closeMobileThread()" aria-label="Back to conversations">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+            </button>
+            <div class="who"><div class="cav"></div><div><h4 id="thread-name">Sample Customer</h4><div class="sub" id="thread-sub">WhatsApp · Company B · Handed over to Sample Agent</div></div></div>
+            <span class="status-pill agent" id="thread-status">Agent</span>
+            <button class="lead-info-btn" onclick="toggleLeadPanel()" aria-label="Show lead details">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+            </button>
+          </div>
+          <div class="thread-body" id="thread-body">
+            <div class="bubble in">Hi! Thanks for messaging Company B 👋 How can I help?</div>
+            <div class="bubble out">Is the new WhatsApp number official? I got a message about it.</div>
+            <div class="bubble in">Yes — this is our new official number for all transactions going forward. You can save it and message us here anytime!</div>
+            <div class="bubble out">Great, thank you!</div>
+            <div class="handover-divider">Handed over to Sample Agent — 2:41 PM</div>
+          </div>
+          <div class="thread-compose">
+            <div class="takeover-bar"><span>🤖 AI Assistant is currently handling this conversation</span><button onclick="takeoverConvo()">Take Over</button></div>
+            <div class="compose-alias">Replying as <b>Sample Agent</b> · Company B — footer auto-appended</div>
+            <div class="compose-row">
+              <input type="text" id="compose-input" placeholder="Type your reply..." onkeydown="if(event.key==='Enter')sendComposeMessage()">
+              <button onclick="sendComposeMessage()">Send</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="lead-panel" id="lead-panel">
+          <div class="lead-panel-handle" onclick="toggleLeadPanel()"></div>
+          <h4>Captured Lead</h4>
+          <span class="lead-tag">Qualified</span>
+          <div class="lead-field"><label>Name</label><div>Sample Customer</div></div>
+          <div class="lead-field"><label>Contact</label><div>+63 900 000 0021</div></div>
+          <div class="lead-field"><label>Inquiry Type</label><div>Delivery / number migration</div></div>
+          <div class="lead-field"><label>Source</label><div><span class="chan-pill wa">WhatsApp</span></div></div>
+          <div class="lead-field"><label>Company</label><div>Company B</div></div>
+          <div class="lead-field"><label>Captured By</label><div>AI Assistant, 2:38 PM</div></div>
+          <div class="lead-field"><label>Handover Reason</label><div>Customer requested confirmation from a person</div></div>
+        </div>
+      </div>
+      <div class="lead-panel-overlay" id="lead-panel-overlay" onclick="toggleLeadPanel()"></div>
+    </div>
+
+    <!-- LEADS -->
+    <div class="page" id="page-leads">
+      <div class="panel">
+        <div class="panel-head"><h3>All Captured Leads</h3><span class="mono" style="font-size:.72rem;color:var(--text-dim)">342 total</span></div>
+        <div class="filter-row">
+          <button class="filter-btn active" onclick="filterTable(this)">All</button>
+          <button class="filter-btn" onclick="filterTable(this)">New</button>
+          <button class="filter-btn" onclick="filterTable(this)">Qualified</button>
+          <button class="filter-btn" onclick="filterTable(this)">Handed Over</button>
+        </div>
+        <table>
+          <thead><tr><th>Lead</th><th>Channel</th><th>Company</th><th>Inquiry</th><th>Status</th><th></th></tr></thead>
+          <tbody>
+            <tr><td><div class="avatar-init"><div class="cav">SC</div>Sample Customer</div></td><td><span class="chan-pill wa">WhatsApp</span></td><td>Company B</td><td>Delivery / migration</td><td><span class="status-pill qualified">Qualified</span></td><td><button class="view-btn" onclick="openLeadModal('Sample Customer','+63 900 000 0021','Delivery / number migration','WhatsApp','Company B')">View</button></td></tr>
+            <tr><td><div class="avatar-init"><div class="cav">SL</div>Sample Lead</div></td><td><span class="chan-pill fb">Messenger</span></td><td>Company A</td><td>Bulk pricing</td><td><span class="status-pill new">New</span></td><td><button class="view-btn" onclick="openLeadModal('Sample Lead','contact@companya.com','Bulk pricing (50+ units)','Messenger','Company A')">View</button></td></tr>
+            <tr><td><div class="avatar-init"><div class="cav">RM</div>Sample Contact</div></td><td><span class="chan-pill wa">WhatsApp</span></td><td>Company C</td><td>Number verification</td><td><span class="status-pill qualified">Qualified</span></td><td><button class="view-btn" onclick="openLeadModal('Sample Contact','+63 900 000 0044','New number verification','WhatsApp','Company C')">View</button></td></tr>
+            <tr><td><div class="avatar-init"><div class="cav">TN</div>Sample User</div></td><td><span class="chan-pill tg">Telegram</span></td><td>Company D</td><td>Monthly plan rates</td><td><span class="status-pill new">New</span></td><td><button class="view-btn" onclick="openLeadModal('Sample User','user@email.com','Monthly plan pricing','Telegram','Company D')">View</button></td></tr>
+            <tr><td><div class="avatar-init"><div class="cav">AV</div>Sample Client</div></td><td><span class="chan-pill fb">Messenger</span></td><td>Company A</td><td>Pickup reschedule</td><td><span class="status-pill qualified">Qualified</span></td><td><button class="view-btn" onclick="openLeadModal('Sample Client','+63 900 000 0077','Pickup rescheduling','Messenger','Company A')">View</button></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- BROADCASTS -->
+    <div class="page" id="page-broadcasts">
+      <div class="panel">
+        <div class="panel-head"><h3>Broadcast Campaigns</h3><button class="filter-btn active" style="border-radius:9px" onclick="toast('New campaign draft created')">+ New Campaign</button></div>
+        <div class="filter-row">
+          <button class="filter-btn active" onclick="filterTable(this)">All</button>
+          <button class="filter-btn" onclick="filterTable(this)">Sending</button>
+          <button class="filter-btn" onclick="filterTable(this)">Completed</button>
+        </div>
+        <table>
+          <thead><tr><th>Campaign</th><th>Company</th><th>Recipients</th><th>Status</th><th></th></tr></thead>
+          <tbody>
+            <tr><td>Number Migration Notice</td><td>Company B</td><td>500</td><td><span class="status-pill sending">Sending</span></td><td><button class="view-btn" onclick="goPage('broadcasts');scrollToProgress()">View</button></td></tr>
+            <tr><td>Number Migration Notice</td><td>Company C</td><td>500</td><td><span class="status-pill completed">Completed</span></td><td><button class="view-btn" onclick="toast('Showing completed campaign summary')">View</button></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="panel" id="progress-panel">
+        <div class="panel-head"><h3>Company B — Number Migration Notice</h3><span class="mono" style="font-size:.72rem;color:var(--text-dim)">Template: UTILITY</span></div>
+        <div style="padding:20px">
+          <div style="display:flex;justify-content:space-between;font-size:.82rem;margin-bottom:4px"><span>250 sent · 12 failed · 238 queued</span><span class="mono" style="color:var(--text-dim)">Tier: 250/24hr</span></div>
+          <div class="progress-bar"><div class="progress-fill" style="width:50%"></div></div>
+          <div class="tier-note">📩 WhatsApp paces new numbers starting at 250 messages/24hr, auto-upgrading as sending quality improves. This campaign is expected to finish in ~2–3 days — that's expected pacing, not a stall.</div>
+        </div>
+        <table>
+          <thead><tr><th>Recipient</th><th>Attempts</th><th>Status</th></tr></thead>
+          <tbody>
+            <tr><td class="mono">+63 900 000 00**</td><td>1</td><td><span class="status-pill completed">Delivered</span></td></tr>
+            <tr><td class="mono">+63 900 000 01**</td><td>1</td><td><span class="status-pill completed">Delivered</span></td></tr>
+            <tr><td class="mono">+63 900 000 02**</td><td>2</td><td><span class="status-pill sending">Retrying</span></td></tr>
+            <tr><td class="mono">+63 900 000 03**</td><td>0</td><td><span class="status-pill new">Queued</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- COMPANIES -->
+    <div class="page" id="page-companies">
+      <div class="panel">
+        <div class="panel-head"><h3>Companies &amp; Connected Channels</h3></div>
+        <table>
+          <thead><tr><th>Company</th><th>Channels</th><th>Staff Assigned</th><th>Status</th><th></th></tr></thead>
+          <tbody>
+            <tr><td>Company A</td><td><span class="chan-pill fb">Messenger</span></td><td>3</td><td><span class="status-pill open">Active</span></td><td><button class="view-btn" onclick="openLeadModal('Company A','Messenger Page','—','Facebook','—')">View</button></td></tr>
+            <tr><td>Company B</td><td><span class="chan-pill wa">WhatsApp</span></td><td>2</td><td><span class="status-pill open">Active</span></td><td><button class="view-btn" onclick="openLeadModal('Company B','WhatsApp Number','—','WhatsApp','—')">View</button></td></tr>
+            <tr><td>Company C</td><td><span class="chan-pill wa">WhatsApp</span></td><td>2</td><td><span class="status-pill open">Active</span></td><td><button class="view-btn" onclick="openLeadModal('Company C','WhatsApp Number','—','WhatsApp','—')">View</button></td></tr>
+            <tr><td>Company D</td><td><span class="chan-pill fb">Messenger</span></td><td>1</td><td><span class="status-pill new">Pending</span></td><td><button class="view-btn" onclick="openLeadModal('Company D','Messenger Page (pending)','—','Facebook','—')">View</button></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- AI & HANDOVER -->
+    <div class="page" id="page-ai">
+      <div class="panel">
+        <div class="panel-head"><h3>AI Assistant Configuration</h3></div>
+        <div class="settings-form" style="padding:20px">
+          <div class="toggle-row"><div><b>AI first response</b><span>The assistant replies to every new conversation before a human sees it</span></div><div class="switch on" onclick="this.classList.toggle('on');toast('Setting updated')"></div></div>
+          <div class="toggle-row"><div><b>Auto lead capture</b><span>Extract name, contact, and inquiry type from the conversation</span></div><div class="switch on" onclick="this.classList.toggle('on');toast('Setting updated')"></div></div>
+          <div class="toggle-row"><div><b>Auto-handover on request</b><span>Immediately hand over when a customer asks for a human</span></div><div class="switch on" onclick="this.classList.toggle('on');toast('Setting updated')"></div></div>
+          <div class="toggle-row"><div><b>Opt-out keyword detection</b><span>Flag likely "STOP" replies for staff review</span></div><div class="switch on" onclick="this.classList.toggle('on');toast('Setting updated')"></div></div>
+          <div><label>Handover trigger phrases (comma separated)</label><textarea rows="2">talk to a human, real person, agent please</textarea></div>
+          <button class="save-btn" onclick="toast('AI configuration saved')">Save Changes</button>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="panel-head"><h3>Recent AI Sessions</h3></div>
+        <table>
+          <thead><tr><th>Session</th><th>Channel</th><th>Outcome</th><th>Linked Lead</th></tr></thead>
+          <tbody>
+            <tr><td class="mono">session-0231</td><td><span class="chan-pill wa">WhatsApp</span></td><td><span class="status-pill agent">Handed over</span></td><td>Sample Customer</td></tr>
+            <tr><td class="mono">session-0230</td><td><span class="chan-pill ig">Instagram</span></td><td><span class="status-pill closed">Resolved by AI</span></td><td>Sample Client</td></tr>
+            <tr><td class="mono">session-0229</td><td><span class="chan-pill tg">Telegram</span></td><td><span class="status-pill ai">In progress</span></td><td>Sample User</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- SETTINGS -->
+    <div class="page" id="page-settings">
+      <div class="panel">
+        <div class="panel-head"><h3>Workspace Settings</h3></div>
+        <form class="settings-form" style="padding:20px" onsubmit="event.preventDefault();toast('Settings saved')">
+          <div><label>Workspace Name</label><input type="text" value="Signal Desk Workspace"></div>
+          <div><label>Admin Email</label><input type="email" value="admin@yourbrand.com"></div>
+          <div><label>Default Reply Footer Format</label><input type="text" value="— {staff_name}, {company_name}"></div>
+          <div><label>Support Hours</label><input type="text" value="Mon–Sat, 9:00 AM – 6:00 PM"></div>
+          <button class="save-btn" type="submit">Save Settings</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- USERS -->
+    <div class="page" id="page-users">
+      <div class="panel">
+        <div class="panel-head"><h3>Team Members</h3><button class="filter-btn active" style="border-radius:9px" onclick="toast('Invite sent')">+ Invite User</button></div>
+        <table>
+          <thead><tr><th>User</th><th>Role</th><th>Companies</th><th>Status</th></tr></thead>
+          <tbody>
+            <tr><td><div class="avatar-init"><div class="cav">AU</div>Admin User</div></td><td>Owner</td><td>All companies</td><td><span class="status-pill open">Active</span></td></tr>
+            <tr><td><div class="avatar-init"><div class="cav">SA</div>Sample Agent</div></td><td>Employee</td><td>Company B, Company C</td><td><span class="status-pill open">Active</span></td></tr>
+            <tr><td><div class="avatar-init"><div class="cav">SE</div>Sample Employee</div></td><td>Employee</td><td>Company A</td><td><span class="status-pill open">Active</span></td></tr>
+            <tr><td><div class="avatar-init"><div class="cav">SM</div>Sample Manager</div></td><td>Admin</td><td>All companies</td><td><span class="status-pill closed">Invited</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- Generic detail modal for Leads/Companies -->
+<div class="modal-overlay detail-modal" id="lead-modal">
+  <div class="modal-box">
+    <button class="modal-close" onclick="closeLeadModal()">✕</button>
+    <h3 id="lm-title">Lead Detail</h3>
+    <div style="margin-top:16px">
+      <div class="dm-row"><span>Contact</span><span id="lm-contact">—</span></div>
+      <div class="dm-row"><span>Inquiry</span><span id="lm-inquiry">—</span></div>
+      <div class="dm-row"><span>Channel</span><span id="lm-channel">—</span></div>
+      <div class="dm-row"><span>Company</span><span id="lm-company">—</span></div>
+    </div>
+    <button class="save-btn" style="width:100%;margin-top:20px" onclick="closeLeadModal();toast('Marked as contacted')">Mark as Contacted</button>
+  </div>
+</div>
+
+<script>
+/* ============ NAVIGATOR / VIEW SWITCHING ============ */
+function selectView(view){
+  document.getElementById('navigator').classList.add('hidden');
+  document.getElementById('switcher').classList.add('visible');
+  document.querySelectorAll('.view').forEach(function(v){ v.classList.remove('active'); });
+  document.getElementById(view+'-view').classList.add('active');
+  document.getElementById('sw-public').classList.toggle('active', view==='public');
+  document.getElementById('sw-admin').classList.toggle('active', view==='admin');
+  window.scrollTo(0,0);
+}
+function openNavigator(){
+  document.getElementById('navigator').classList.remove('hidden');
+}
+
+/* ============ MOBILE NAV TOGGLES ============ */
+function togglePublicNav(){
+  document.getElementById('pnav-mobile-links').classList.toggle('open');
+}
+function toggleSidebar(){
+  document.getElementById('sidebar').classList.toggle('open');
+  document.getElementById('sidebar-overlay').classList.toggle('show');
+}
+
+/* ============ TOASTS ============ */
+function toast(msg){
+  var wrap = document.getElementById('toast-wrap');
+  var t = document.createElement('div');
+  t.className='toast';
+  t.innerHTML = '<span class="dot"></span>'+msg;
+  wrap.appendChild(t);
+  setTimeout(function(){ t.style.opacity='0'; t.style.transition='opacity .3s'; setTimeout(function(){ t.remove(); },300); }, 3600);
+}
+
+/* ============ ADMIN NAV ============ */
+function goPage(page){
+  document.querySelectorAll('.page').forEach(function(p){ p.classList.remove('active'); });
+  document.getElementById('page-'+page).classList.add('active');
+  document.querySelectorAll('.sb-link').forEach(function(l){ l.classList.remove('active'); });
+  var link = document.querySelector('.sb-link[data-page="'+page+'"]');
+  if(link) link.classList.add('active');
+  var titles = {dashboard:'Dashboard',inbox:'Unified Inbox',leads:'All Leads',broadcasts:'Broadcast Campaigns',companies:'Companies & Channels',ai:'AI & Handover',settings:'Settings',users:'Users'};
+  document.getElementById('page-title').textContent = titles[page] || 'Dashboard';
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('sidebar-overlay').classList.remove('show');
+}
+
+/* ============ HERO CHAT WIDGET ============ */
+function sendHeroMessage(){
+  var input = document.getElementById('hero-input');
+  var val = input.value.trim();
+  if(!val) return;
+  var chat = document.getElementById('hero-chat');
+  var b = document.createElement('div');
+  b.className='bubble out'; b.textContent = val;
+  chat.appendChild(b);
+  input.value='';
+  chat.scrollTop = chat.scrollHeight;
+  var typing = document.createElement('div');
+  typing.className='typing';
+  typing.innerHTML='<span></span><span></span><span></span>';
+  chat.appendChild(typing);
+  chat.scrollTop = chat.scrollHeight;
+  setTimeout(function(){
+    typing.remove();
+    var reply = document.createElement('div');
+    reply.className='bubble in';
+    reply.textContent = "Thanks for the message! I've noted this and a member of our team will follow up shortly.";
+    chat.appendChild(reply);
+    chat.scrollTop = chat.scrollHeight;
+  }, 1300);
+}
+function sendQuickReply(btn){
+  document.getElementById('hero-input').value = btn.textContent;
+  sendHeroMessage();
+}
+
+/* ============ EXIT INTENT ============ */
+var exitShown = false;
+document.addEventListener('mouseleave', function(e){
+  if(e.clientY < 0 && !exitShown && document.getElementById('public-view').classList.contains('active')){
+    exitShown = true;
+    document.getElementById('exit-modal').classList.add('show');
+  }
+});
+function closeExitModal(){ document.getElementById('exit-modal').classList.remove('show'); }
+function submitExitForm(e){
+  e.preventDefault();
+  document.getElementById('exit-form-wrap').style.display='none';
+  document.getElementById('exit-success').classList.add('show');
+  setTimeout(function(){ closeExitModal(); }, 1800);
+  return false;
+}
+document.getElementById('exit-modal').addEventListener('click', function(e){
+  if(e.target.id==='exit-modal') closeExitModal();
+});
+
+/* ============ LEAD FORM (public) ============ */
+function submitLeadForm(e){
+  e.preventDefault();
+  toast("Submitted — this is the same capture flow the AI fills in automatically.");
+  e.target.reset();
+  return false;
+}
+
+/* ============ INBOX DATA ============ */
+var convData = {
+  1:{name:'Sample Customer', sub:'WhatsApp · Company B · Handed over to Sample Agent', status:'agent', statusLabel:'Agent', takeover:false,
+     msgs:[['in','Hi! Thanks for messaging Company B 👋 How can I help?'],['out','Is the new WhatsApp number official? I got a message about it.'],['in',"Yes — this is our new official number for all transactions going forward. You can save it and message us here anytime!"],['out','Great, thank you!'],['divider','Handed over to Sample Agent — 2:41 PM']]},
+  2:{name:'Sample Lead', sub:'Messenger · Company A · AI Assistant handling', status:'ai', statusLabel:'AI', takeover:true,
+     msgs:[['in','Hi! Thanks for reaching out to Company A 👋'],['out','Do you offer bulk pricing for 50+ units?'],['in','We do! Bulk orders of 50+ units get a tiered discount. Want me to connect you with our sales team for exact pricing?']]},
+  3:{name:'Sample Contact', sub:'WhatsApp · Company C · AI Assistant handling', status:'ai', statusLabel:'AI', takeover:true,
+     msgs:[['in',"Hi! This is Company C's official channel 👋"],['out','Is the new number official?'],['in','Yes, this number is verified and official for Company C going forward.']]},
+  4:{name:'Sample Customer', sub:'Instagram · Company A · Closed', status:'closed', statusLabel:'Closed', takeover:false,
+     msgs:[['in','Hi there! How can we help today?'],['out','Just checking my delivery status'],['in',"You're all set — it's out for delivery today!"],['out','Perfect, thanks for checking!']]},
+  5:{name:'Sample User', sub:'Telegram · Company D · AI Assistant handling', status:'ai', statusLabel:'AI', takeover:true,
+     msgs:[['in','Hello! Welcome to Company D 👋'],['out','What are your rates for a monthly plan?'],['in','Our monthly plans start at a flat rate with volume-based tiers — want a quick breakdown?']]},
+  6:{name:'Sample Client', sub:'Messenger · Company A · Handed over to Sample Agent', status:'agent', statusLabel:'Agent', takeover:false,
+     msgs:[['in','Hi! How can we help?'],['out','Can I reschedule my pickup?'],['divider','Handed over to Sample Agent — 12:52 PM'],['in','Hi, this is Sample Agent — happy to help reschedule. What day works for you?']]}
+};
+function selectConversation(el, id, skipMobileOpen){
+  document.querySelectorAll('.conv-item').forEach(function(c){ c.classList.remove('active'); });
+  el.classList.add('active');
+  var ud = el.querySelector('.unread-dot');
+  if(ud) ud.remove();
+  var d = convData[id];
+  document.getElementById('thread-name').textContent = d.name;
+  document.getElementById('thread-sub').textContent = d.sub;
+  var statusEl = document.getElementById('thread-status');
+  statusEl.className = 'status-pill '+d.status;
+  statusEl.textContent = d.statusLabel;
+  var body = document.getElementById('thread-body');
+  body.innerHTML = d.msgs.map(function(m){
+    if(m[0]==='divider') return '<div class="handover-divider">'+m[1]+'</div>';
+    return '<div class="bubble '+m[0]+'">'+m[1]+'</div>';
+  }).join('');
+  var bar = document.querySelector('.takeover-bar');
+  bar.style.display = d.takeover ? 'flex' : 'none';
+  if(!skipMobileOpen && window.innerWidth <= 760){
+    document.getElementById('inbox-wrap').classList.add('mobile-thread-open');
+  }
+}
+function closeMobileThread(){
+  document.getElementById('inbox-wrap').classList.remove('mobile-thread-open');
+}
+function toggleLeadPanel(){
+  document.getElementById('lead-panel').classList.toggle('open');
+  document.getElementById('lead-panel-overlay').classList.toggle('show');
+}
+function takeoverConvo(){
+  document.querySelector('.takeover-bar').style.display='none';
+  var statusEl = document.getElementById('thread-status');
+  statusEl.className='status-pill agent';
+  statusEl.textContent='Agent';
+  var body = document.getElementById('thread-body');
+  var div = document.createElement('div');
+  div.className='handover-divider';
+  div.textContent='Handed over to Sample Agent — just now';
+  body.appendChild(div);
+  body.scrollTop = body.scrollHeight;
+  toast('Conversation taken over — you are now replying');
+}
+function sendComposeMessage(){
+  var input = document.getElementById('compose-input');
+  var val = input.value.trim();
+  if(!val) return;
+  var body = document.getElementById('thread-body');
+  var b = document.createElement('div');
+  b.className='bubble in';
+  b.textContent = val + '\n\n— Sample Agent, Company B';
+  b.style.whiteSpace='pre-line';
+  body.appendChild(b);
+  input.value='';
+  body.scrollTop = body.scrollHeight;
+  toast('Message sent');
+}
+
+/* ============ INBOX COMPANY / CHANNEL FILTERS ============ */
+var inboxFilters = { company:'all', channel:'all' };
+function filterInbox(btn){
+  var group = btn.getAttribute('data-group');
+  var value = btn.getAttribute('data-value');
+  inboxFilters[group] = value;
+  document.querySelectorAll('.filter-btn[data-group="'+group+'"]').forEach(function(b){ b.classList.remove('active'); });
+  btn.classList.add('active');
+  applyInboxFilters();
+}
+function applyInboxFilters(){
+  var items = document.querySelectorAll('#page-inbox .conv-item');
+  var visibleCount = 0;
+  var firstVisible = null;
+  items.forEach(function(item){
+    var matchCompany = (inboxFilters.company==='all') || (item.getAttribute('data-company')===inboxFilters.company);
+    var matchChannel = (inboxFilters.channel==='all') || (item.getAttribute('data-channel')===inboxFilters.channel);
+    var show = matchCompany && matchChannel;
+    item.style.display = show ? 'flex' : 'none';
+    if(show){
+      visibleCount++;
+      if(!firstVisible) firstVisible = item;
+    }
+  });
+  var countEl = document.getElementById('inbox-count');
+  if(countEl) countEl.textContent = visibleCount + (visibleCount===1 ? ' open' : ' open');
+  var emptyEl = document.getElementById('conv-empty');
+  if(emptyEl) emptyEl.style.display = visibleCount===0 ? 'block' : 'none';
+  var anyActiveVisible = Array.prototype.some.call(items, function(item){
+    return item.classList.contains('active') && item.style.display !== 'none';
+  });
+  if(!anyActiveVisible && firstVisible){
+    var convId = firstVisible.getAttribute('data-conv-id');
+    if(convId) selectConversation(firstVisible, parseInt(convId, 10), true);
+  }
+  toast('Inbox filtered: ' + (inboxFilters.company==='all' ? 'All Companies' : inboxFilters.company) + ' · ' + (inboxFilters.channel==='all' ? 'All Channels' : inboxFilters.channel.toUpperCase()));
+}
+
+/* ============ FILTERS (Leads / Broadcasts tables) ============ */
+function filterTable(btn){
+  Array.prototype.forEach.call(btn.parentElement.querySelectorAll('.filter-btn'), function(b){ b.classList.remove('active'); });
+  btn.classList.add('active');
+  toast('Filtered: '+btn.textContent);
+}
+
+/* ============ BROADCAST ============ */
+function scrollToProgress(){
+  document.getElementById('progress-panel').scrollIntoView({behavior:'smooth', block:'center'});
+}
+
+/* ============ LEAD DETAIL MODAL ============ */
+function openLeadModal(name, contact, inquiry, channel, company){
+  document.getElementById('lm-title').textContent = name;
+  document.getElementById('lm-contact').textContent = contact;
+  document.getElementById('lm-inquiry').textContent = inquiry;
+  document.getElementById('lm-channel').textContent = channel;
+  document.getElementById('lm-company').textContent = company;
+  document.getElementById('lead-modal').classList.add('show');
+}
+function closeLeadModal(){ document.getElementById('lead-modal').classList.remove('show'); }
+document.getElementById('lead-modal').addEventListener('click', function(e){
+  if(e.target.id==='lead-modal') closeLeadModal();
+});
+</script>
+</body>
+</html>
